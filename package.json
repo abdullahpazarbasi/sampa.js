@@ -1,0 +1,22 @@
+{
+  "name": "sampa.js",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "author": "Abdullah Pazarbasi",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.21.4",
+    "@babel/preset-env": "^7.21.4",
+    "@babel/register": "^7.21.0",
+    "babel-loader": "^9.1.2",
+    "chai": "^4.3.7",
+    "mocha": "^10.2.0",
+    "webpack": "^5.79.0",
+    "webpack-cli": "^5.0.1"
+  },
+  "scripts": {
+    "build": "webpack",
+    "test": "mocha --require @babel/register 'test/**/*.test.js'"
+  }
+}
