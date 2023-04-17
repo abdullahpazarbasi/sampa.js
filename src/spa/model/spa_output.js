@@ -1,4 +1,50 @@
 export class SpaOutput {
+    jd;
+    jc;
+    jde;
+    jce;
+    jme;
+    l;
+    b;
+    r;
+    theta;
+    beta;
+    x0;
+    x1;
+    x2;
+    x3;
+    x4;
+    del_psi;
+    del_epsilon;
+    epsilon0;
+    epsilon;
+    del_tau;
+    lamda;
+    nu0;
+    nu;
+    alpha;
+    delta;
+    h;
+    xi;
+    del_alpha;
+    delta_prime;
+    alpha_prime;
+    h_prime;
+    e0;
+    del_e;
+    e;
+    eot;
+    srha;
+    ssha;
+    sta;
+    zenith;
+    azimuth_astro;
+    azimuth;
+    incidence;
+    suntransit;
+    sunrise;
+    sunset;
+
     constructor(
         jd,
         jc,

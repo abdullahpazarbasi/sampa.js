@@ -15,6 +15,8 @@ Please visit https://midcdmz.nrel.gov/sampa for additional information.
 ## Differences
 
 - Inter-module functions wrapped into services
+- Input / output structure discriminated
+- Input / output models decoupled respecting to services
 - Value precision differences
 - Plain associative arrays wrapped into objects whose only property is `associative`
 - Tester entrypoints converted to unit tests

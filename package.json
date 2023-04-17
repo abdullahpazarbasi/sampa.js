@@ -16,7 +16,7 @@
     "webpack-cli": "^5.0.1"
   },
   "scripts": {
-    "build": "webpack",
+    "build": "webpack --mode=production",
     "test": "mocha --require @babel/register 'test/**/*.test.js'"
   }
 }

@@ -1,6 +1,25 @@
 import {SPA_ALL, SPA_ZA_INC} from "../spa_service.js";
 
 export class SpaInput {
+    year;
+    month;
+    day;
+    hour;
+    minute;
+    second;
+    delta_ut1;
+    delta_t;
+    timezone;
+    longitude;
+    latitude;
+    elevation;
+    pressure;
+    temperature;
+    slope;
+    azm_rotation;
+    atmos_refract;
+    function;
+
     constructor(
         year,
         month,

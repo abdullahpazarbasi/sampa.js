@@ -2,9 +2,11 @@ import {BirdInput} from "./model/bird_input.js";
 import {BirdOutput} from "./model/bird_output.js";
 
 export class BirdService {
-    calculate(birdInput) {
-        let birdOutput = new BirdOutput();
-
+    /**
+     * @param {BirdInput} birdInput
+     * @param {BirdOutput} birdOutput
+     */
+    calculate(birdInput, birdOutput) {
         let etrn, press, oz, wat, coszen, taa, rs, ias;
         let t_rayliegh, t_ozone, t_gases, t_water, t_aerosol;
 
@@ -45,8 +47,6 @@ export class BirdService {
             birdOutput.amass = birdOutput.direct_normal = birdOutput.global_horiz = birdOutput.diffuse_horiz = 0;
             birdOutput.direct_normal_mod = birdOutput.global_horiz_mod = birdOutput.diffuse_horiz_mod = 0;
         }
-
-        return birdOutput;
     }
 
     horiz(dni, coszen, ias, albedo, rs) {
@@ -67,7 +67,7 @@ export class BirdService {
             dhi = 0;
         }
 
-        return {ghi, dhi};
+        return {ghi: ghi, dhi: dhi};
     }
 }
 

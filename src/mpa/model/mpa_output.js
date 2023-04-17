@@ -1,4 +1,31 @@
 export class MpaOutput {
+    l_prime;
+    d;
+    m;
+    m_prime;
+    f;
+    l;
+    r;
+    b;
+    lamda_prime;
+    beta;
+    cap_delta;
+    pi;
+    lamda;
+    alpha;
+    delta;
+    h;
+    del_alpha;
+    delta_prime;
+    alpha_prime;
+    h_prime;
+    e0;
+    del_e;
+    e;
+    zenith;
+    azimuth_astro;
+    azimuth;
+
     constructor(
         l_prime,
         d,

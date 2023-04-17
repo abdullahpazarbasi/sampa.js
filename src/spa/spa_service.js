@@ -1,20 +1,33 @@
 import {SpaInput} from './model/spa_input.js';
 import {SpaOutput} from './model/spa_output.js';
-import '../utils/utils.js';
 import {
+    atmospheric_refraction_correction,
     dayfrac_to_local_hr,
     deg2rad,
+    geocentric_declination,
+    geocentric_right_ascension,
     julian_century,
     julian_day,
     julian_ephemeris_century,
     julian_ephemeris_day,
     julian_ephemeris_millennium,
     limit_degrees,
-    limit_degrees180, limit_degrees180pm,
+    limit_degrees180,
+    limit_degrees180pm,
     limit_minutes,
     limit_zero2one,
+    observer_hour_angle,
     rad2deg,
-    third_order_polynomial
+    right_ascension_parallax_and_topocentric_dec,
+    SUN_RADIUS,
+    third_order_polynomial,
+    topocentric_azimuth_angle,
+    topocentric_azimuth_angle_astro,
+    topocentric_elevation_angle,
+    topocentric_elevation_angle_corrected,
+    topocentric_local_hour_angle,
+    topocentric_right_ascension,
+    topocentric_zenith_angle
 } from "../utils/utils.js";
 
 //enumeration for function codes to select desired final outputs from SPA
@@ -22,8 +35,6 @@ export const SPA_ZA = 0;     //calculate zenith and azimuth
 export const SPA_ZA_INC = 1; //calculate zenith, azimuth, and incidence
 export const SPA_ZA_RTS = 2; //calculate zenith, azimuth, and sun rise/transit/set values
 export const SPA_ALL = 3;    //calculate all SPA output values
-
-const SUN_RADIUS = 0.26667;
 
 const L_COUNT = 6;
 const B_COUNT = 2;
@@ -33,7 +44,6 @@ const Y_COUNT = 63;
 const TERM_A = 0;
 const TERM_B = 1;
 const TERM_C = 2;
-const TERM_COUNT = 3;
 
 const TERM_X0 = 0;
 const TERM_X1 = 1;
@@ -46,7 +56,6 @@ const TERM_PSI_A = 0;
 const TERM_PSI_B = 1;
 const TERM_EPS_C = 2;
 const TERM_EPS_D = 3;
-const TERM_PE_COUNT = 4;
 
 const JD_MINUS = 0;
 const JD_ZERO = 1;
@@ -64,10 +73,7 @@ const l_subcount = [64, 34, 20, 7, 3, 1];
 const b_subcount = [5, 2];
 const r_subcount = [40, 10, 6, 2, 1];
 
-///////////////////////////////////////////////////
-///  Earth Periodic Terms
-///////////////////////////////////////////////////
-
+// Earth Periodic Terms
 const L_TERMS = [
     [
         [175347046.0, 0, 0],
@@ -298,10 +304,7 @@ const R_TERMS = [
     ]
 ];
 
-////////////////////////////////////////////////////////////////
-///  Periodic Terms for the nutation in longitude and obliquity
-////////////////////////////////////////////////////////////////
-
+// Periodic Terms for the nutation in longitude and obliquity
 const Y_TERMS = [
     [0, 0, 0, 0, 1],
     [-2, 0, 0, 2, 2],
@@ -435,8 +438,85 @@ const PE_TERMS = [
 ];
 
 export class SpaService {
-    // Calculate required SPA parameters to get the right ascension (alpha) and declination (delta)
-    // Note: JD must be already calculated and in structure
+    /**
+     * Calculate all SPA parameters and put into structure
+     * Note: All inputs values (listed in header file) must already be in structure
+     *
+     * @param {SpaInput} spaInput
+     * @param {SpaOutput} spaOutput
+     */
+    calculate(spaInput, spaOutput) {
+        const result = spaInput.validate();
+        if (result === 0) {
+            spaOutput.jd = julian_day(
+                spaInput.year,
+                spaInput.month,
+                spaInput.day,
+                spaInput.hour,
+                spaInput.minute,
+                spaInput.second,
+                spaInput.delta_ut1,
+                spaInput.timezone
+            );
+
+            this.calculate_geocentric_sun_right_ascension_and_declination(spaInput, spaOutput);
+
+            spaOutput.h = observer_hour_angle(spaOutput.nu, spaInput.longitude, spaOutput.alpha);
+            spaOutput.xi = sun_equatorial_horizontal_parallax(spaOutput.r);
+
+            const deltaAlphaAndDeltaPrime = right_ascension_parallax_and_topocentric_dec(
+                spaInput.latitude,
+                spaInput.elevation,
+                spaOutput.xi,
+                spaOutput.h,
+                spaOutput.delta
+            );
+            spaOutput.del_alpha = deltaAlphaAndDeltaPrime.delta_alpha;
+            spaOutput.delta_prime = deltaAlphaAndDeltaPrime.delta_prime;
+
+            spaOutput.alpha_prime = topocentric_right_ascension(spaOutput.alpha, spaOutput.del_alpha);
+            spaOutput.h_prime = topocentric_local_hour_angle(spaOutput.h, spaOutput.del_alpha);
+
+            spaOutput.e0 = topocentric_elevation_angle(spaInput.latitude, spaOutput.delta_prime, spaOutput.h_prime);
+            spaOutput.del_e = atmospheric_refraction_correction(
+                spaInput.pressure,
+                spaInput.temperature,
+                spaInput.atmos_refract,
+                spaOutput.e0
+            );
+            spaOutput.e = topocentric_elevation_angle_corrected(spaOutput.e0, spaOutput.del_e);
+
+            spaOutput.zenith = topocentric_zenith_angle(spaOutput.e);
+            spaOutput.azimuth_astro = topocentric_azimuth_angle_astro(
+                spaOutput.h_prime,
+                spaInput.latitude,
+                spaOutput.delta_prime
+            );
+            spaOutput.azimuth = topocentric_azimuth_angle(spaOutput.azimuth_astro);
+
+            if ((spaInput.function === SPA_ZA_INC) || (spaInput.function === SPA_ALL))
+                spaOutput.incidence = surface_incidence_angle(
+                    spaOutput.zenith,
+                    spaOutput.azimuth_astro,
+                    spaInput.azm_rotation,
+                    spaInput.slope
+                );
+
+            if ((spaInput.function === SPA_ZA_RTS) || (spaInput.function === SPA_ALL)) {
+                this.calculate_eot_and_sun_rise_transit_set(spaInput, spaOutput);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Calculate required SPA parameters to get the right ascension (alpha) and declination (delta)
+     * Note: JD must be already calculated and in structure
+     *
+     * @param {SpaInput} spaInput
+     * @param {SpaOutput} spaOutput
+     */
     calculate_geocentric_sun_right_ascension_and_declination(spaInput, spaOutput) {
         let x = new Array(TERM_X_COUNT);
 
@@ -475,7 +555,12 @@ export class SpaService {
         spaOutput.delta = geocentric_declination(spaOutput.beta, spaOutput.epsilon, spaOutput.lamda);
     }
 
-    // Calculate Equation of Time (EOT) and Sun Rise, Transit, & Set (RTS)
+    /**
+     * Calculate Equation of Time (EOT) and Sun Rise, Transit, & Set (RTS)
+     *
+     * @param {SpaInput} spaInput
+     * @param {SpaOutput} spaOutput
+     */
     calculate_eot_and_sun_rise_transit_set(spaInput, spaOutput) {
         let nu, m, h0, n;
         let alpha = {associative: new Array(JD_COUNT)};
@@ -546,73 +631,6 @@ export class SpaService {
         } else {
             spaOutput.srha = spaOutput.ssha = spaOutput.sta = spaOutput.suntransit = spaOutput.sunrise = spaOutput.sunset = -99999;
         }
-    }
-
-    // Calculate all SPA parameters and put into structure
-    // Note: All inputs values (listed in header file) must already be in structure
-    calculate(spaInput, spaOutput) {
-        const result = spaInput.validate();
-        if (result === 0) {
-            spaOutput.jd = julian_day(
-                spaInput.year,
-                spaInput.month,
-                spaInput.day,
-                spaInput.hour,
-                spaInput.minute,
-                spaInput.second,
-                spaInput.delta_ut1,
-                spaInput.timezone
-            );
-
-            this.calculate_geocentric_sun_right_ascension_and_declination(spaInput, spaOutput);
-
-            spaOutput.h = observer_hour_angle(spaOutput.nu, spaInput.longitude, spaOutput.alpha);
-            spaOutput.xi = sun_equatorial_horizontal_parallax(spaOutput.r);
-
-            const deltaAlphaAndDeltaPrime = right_ascension_parallax_and_topocentric_dec(
-                spaInput.latitude,
-                spaInput.elevation,
-                spaOutput.xi,
-                spaOutput.h,
-                spaOutput.delta
-            );
-            spaOutput.del_alpha = deltaAlphaAndDeltaPrime.delta_alpha;
-            spaOutput.delta_prime = deltaAlphaAndDeltaPrime.delta_prime;
-
-            spaOutput.alpha_prime = topocentric_right_ascension(spaOutput.alpha, spaOutput.del_alpha);
-            spaOutput.h_prime = topocentric_local_hour_angle(spaOutput.h, spaOutput.del_alpha);
-
-            spaOutput.e0 = topocentric_elevation_angle(spaInput.latitude, spaOutput.delta_prime, spaOutput.h_prime);
-            spaOutput.del_e = atmospheric_refraction_correction(
-                spaInput.pressure,
-                spaInput.temperature,
-                spaInput.atmos_refract,
-                spaOutput.e0
-            );
-            spaOutput.e = topocentric_elevation_angle_corrected(spaOutput.e0, spaOutput.del_e);
-
-            spaOutput.zenith = topocentric_zenith_angle(spaOutput.e);
-            spaOutput.azimuth_astro = topocentric_azimuth_angle_astro(
-                spaOutput.h_prime,
-                spaInput.latitude,
-                spaOutput.delta_prime
-            );
-            spaOutput.azimuth = topocentric_azimuth_angle(spaOutput.azimuth_astro);
-
-            if ((spaInput.function === SPA_ZA_INC) || (spaInput.function === SPA_ALL))
-                spaOutput.incidence = surface_incidence_angle(
-                    spaOutput.zenith,
-                    spaOutput.azimuth_astro,
-                    spaInput.azm_rotation,
-                    spaInput.slope
-                );
-
-            if ((spaInput.function === SPA_ZA_RTS) || (spaInput.function === SPA_ALL)) {
-                this.calculate_eot_and_sun_rise_transit_set(spaInput, spaOutput);
-            }
-        }
-
-        return result;
     }
 }
 
@@ -748,89 +766,8 @@ function greenwich_sidereal_time(nu0, delta_psi, epsilon) {
     return nu0 + delta_psi * Math.cos(deg2rad(epsilon));
 }
 
-function geocentric_right_ascension(lamda, epsilon, beta) {
-    const lamda_rad = deg2rad(lamda);
-    const epsilon_rad = deg2rad(epsilon);
-
-    return limit_degrees(rad2deg(Math.atan2(Math.sin(lamda_rad) * Math.cos(epsilon_rad) - Math.tan(deg2rad(beta)) * Math.sin(epsilon_rad), Math.cos(lamda_rad))));
-}
-
-function geocentric_declination(beta, epsilon, lamda) {
-    const beta_rad = deg2rad(beta);
-    const epsilon_rad = deg2rad(epsilon);
-
-    return rad2deg(Math.asin(Math.sin(beta_rad) * Math.cos(epsilon_rad) + Math.cos(beta_rad) * Math.sin(epsilon_rad) * Math.sin(deg2rad(lamda))));
-}
-
-function observer_hour_angle(nu, longitude, alpha_deg) {
-    return limit_degrees(nu + longitude - alpha_deg);
-}
-
 function sun_equatorial_horizontal_parallax(r) {
     return 8.794 / (3600.0 * r);
-}
-
-function right_ascension_parallax_and_topocentric_dec(latitude, elevation, xi, h, delta) {
-    const lat_rad = deg2rad(latitude);
-    const xi_rad = deg2rad(xi);
-    const h_rad = deg2rad(h);
-    const delta_rad = deg2rad(delta);
-    const u = Math.atan(0.99664719 * Math.tan(lat_rad));
-    const y = 0.99664719 * Math.sin(u) + elevation * Math.sin(lat_rad) / 6378140.0;
-    const x = Math.cos(u) + elevation * Math.cos(lat_rad) / 6378140.0;
-
-    const delta_alpha_rad = Math.atan2(-x * Math.sin(xi_rad) * Math.sin(h_rad), Math.cos(delta_rad) - x * Math.sin(xi_rad) * Math.cos(h_rad));
-
-    const delta_alpha = rad2deg(delta_alpha_rad);
-    const delta_prime = rad2deg(Math.atan2((Math.sin(delta_rad) - y * Math.sin(xi_rad)) * Math.cos(delta_alpha_rad), Math.cos(delta_rad) - x * Math.sin(xi_rad) * Math.cos(h_rad)));
-
-    return {delta_alpha: delta_alpha, delta_prime: delta_prime};
-}
-
-function topocentric_right_ascension(alpha_deg, delta_alpha) {
-    return alpha_deg + delta_alpha;
-}
-
-function topocentric_local_hour_angle(h, delta_alpha) {
-    return h - delta_alpha;
-}
-
-function topocentric_elevation_angle(latitude, delta_prime, h_prime) {
-    const lat_rad = deg2rad(latitude);
-    const delta_prime_rad = deg2rad(delta_prime);
-
-    return rad2deg(Math.asin(Math.sin(lat_rad) * Math.sin(delta_prime_rad) +
-        Math.cos(lat_rad) * Math.cos(delta_prime_rad) * Math.cos(deg2rad(h_prime))));
-}
-
-function atmospheric_refraction_correction(pressure, temperature, atmos_refract, e0) {
-    let del_e = 0;
-    if (e0 >= -1 * (SUN_RADIUS + atmos_refract)) {
-        del_e = (pressure / 1010.0) * (283.0 / (273.0 + temperature)) *
-            1.02 / (60.0 * Math.tan(deg2rad(e0 + 10.3 / (e0 + 5.11))));
-    }
-
-    return del_e;
-}
-
-function topocentric_elevation_angle_corrected(e0, delta_e) {
-    return e0 + delta_e;
-}
-
-function topocentric_zenith_angle(e) {
-    return 90.0 - e;
-}
-
-function topocentric_azimuth_angle_astro(h_prime, latitude, delta_prime) {
-    const h_prime_rad = deg2rad(h_prime);
-    const lat_rad = deg2rad(latitude);
-
-    return limit_degrees(rad2deg(Math.atan2(Math.sin(h_prime_rad),
-        Math.cos(h_prime_rad) * Math.sin(lat_rad) - Math.tan(deg2rad(delta_prime)) * Math.cos(lat_rad))));
-}
-
-function topocentric_azimuth_angle(azimuth_astro) {
-    return limit_degrees(azimuth_astro + 180.0);
 }
 
 function surface_incidence_angle(zenith, azimuth_astro, azm_rotation, slope) {

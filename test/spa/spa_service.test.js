@@ -1,6 +1,7 @@
 import {SpaService, SpaInput, SpaOutput, SPA_ALL} from '../../src/spa/spa_service.js';
-import {expect} from 'chai';
 import {convertFractionalHourToClockNotation} from "../../src/utils/utils.js";
+
+import {expect} from 'chai';
 
 describe('spa service', () => {
     it('should return valid output', () => {

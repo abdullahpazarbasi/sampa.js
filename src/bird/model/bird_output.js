@@ -1,4 +1,12 @@
 export class BirdOutput {
+    amass;
+    direct_normal;
+    global_horiz;
+    diffuse_horiz;
+    direct_normal_mod;
+    global_horiz_mod;
+    diffuse_horiz_mod;
+
     constructor(
         amass,
         direct_normal,

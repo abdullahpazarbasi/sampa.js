@@ -1,4 +1,14 @@
 export class BirdInput {
+    zenith;
+    r;
+    pressure;
+    ozone;
+    water;
+    taua;
+    ba;
+    albedo;
+    dni_mod;
+
     constructor(
         zenith,
         r,
