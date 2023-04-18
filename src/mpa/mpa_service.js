@@ -1,5 +1,5 @@
-import {MpaInput} from "./model/mpa_input.js";
-import {MpaOutput} from "./model/mpa_output.js";
+import {MpaRequest} from "./model/mpa_request.js";
+import {MpaResponse} from "./model/mpa_response.js";
 import {
     atmospheric_refraction_correction,
     deg2rad,
@@ -18,7 +18,7 @@ import {
     topocentric_local_hour_angle,
     topocentric_right_ascension,
     topocentric_zenith_angle
-} from "../utils/utils.js";
+} from "../common/utils.js";
 
 const TERM_D = 0;
 const TERM_M = 1;
@@ -160,87 +160,91 @@ export class MpaService {
      * Calculate all MPA parameters and put into structure
      * Note: All inputs values (listed in SPA header file) must already be in structure
      *
-     * @param {MpaInput} mpaInput
-     * @param {MpaOutput} mpaOutput
+     * @param {MpaRequest} mpaRequest
+     * @return {MpaResponse}
      */
-    calculate(mpaInput, mpaOutput) {
-        mpaOutput.l_prime = moon_mean_longitude(mpaInput.jce);
-        mpaOutput.d = moon_mean_elongation(mpaInput.jce);
-        mpaOutput.m = sun_mean_anomaly(mpaInput.jce);
-        mpaOutput.m_prime = moon_mean_anomaly(mpaInput.jce);
-        mpaOutput.f = moon_latitude_argument(mpaInput.jce);
+    calculate(mpaRequest) {
+        const mpaResponse = new MpaResponse();
+
+        mpaResponse.l_prime = moon_mean_longitude(mpaRequest.jce);
+        mpaResponse.d = moon_mean_elongation(mpaRequest.jce);
+        mpaResponse.m = sun_mean_anomaly(mpaRequest.jce);
+        mpaResponse.m_prime = moon_mean_anomaly(mpaRequest.jce);
+        mpaResponse.f = moon_latitude_argument(mpaRequest.jce);
 
         const mlTerms = {associative: ML_TERMS};
         let sinSumAndCosSum = moon_periodic_term_summation(
-            mpaOutput.d,
-            mpaOutput.m,
-            mpaOutput.m_prime,
-            mpaOutput.f,
-            mpaInput.jce,
+            mpaResponse.d,
+            mpaResponse.m,
+            mpaResponse.m_prime,
+            mpaResponse.f,
+            mpaRequest.jce,
             mlTerms
         );
-        mpaOutput.l = sinSumAndCosSum.sin_sum;
-        mpaOutput.r = sinSumAndCosSum.cos_sum;
+        mpaResponse.l = sinSumAndCosSum.sin_sum;
+        mpaResponse.r = sinSumAndCosSum.cos_sum;
         const mbTerms = {associative: MB_TERMS};
         sinSumAndCosSum = moon_periodic_term_summation(
-            mpaOutput.d,
-            mpaOutput.m,
-            mpaOutput.m_prime,
-            mpaOutput.f,
-            mpaInput.jce,
+            mpaResponse.d,
+            mpaResponse.m,
+            mpaResponse.m_prime,
+            mpaResponse.f,
+            mpaRequest.jce,
             mbTerms
         );
-        mpaOutput.b = sinSumAndCosSum.sin_sum;
+        mpaResponse.b = sinSumAndCosSum.sin_sum;
 
         const lambdaPrimeAndBeta = moon_longitude_and_latitude(
-            mpaInput.jce,
-            mpaOutput.l_prime,
-            mpaOutput.f,
-            mpaOutput.m_prime,
-            mpaOutput.l,
-            mpaOutput.b
+            mpaRequest.jce,
+            mpaResponse.l_prime,
+            mpaResponse.f,
+            mpaResponse.m_prime,
+            mpaResponse.l,
+            mpaResponse.b
         );
-        mpaOutput.lamda_prime = lambdaPrimeAndBeta.lamda_prime;
-        mpaOutput.beta = lambdaPrimeAndBeta.beta;
+        mpaResponse.lamda_prime = lambdaPrimeAndBeta.lamda_prime;
+        mpaResponse.beta = lambdaPrimeAndBeta.beta;
 
-        mpaOutput.cap_delta = moon_earth_distance(mpaOutput.r);
-        mpaOutput.pi = moon_equatorial_horiz_parallax(mpaOutput.cap_delta);
-        mpaOutput.lamda = apparent_moon_longitude(mpaOutput.lamda_prime, mpaInput.del_psi);
+        mpaResponse.cap_delta = moon_earth_distance(mpaResponse.r);
+        mpaResponse.pi = moon_equatorial_horiz_parallax(mpaResponse.cap_delta);
+        mpaResponse.lamda = apparent_moon_longitude(mpaResponse.lamda_prime, mpaRequest.del_psi);
 
-        mpaOutput.alpha = geocentric_right_ascension(mpaOutput.lamda, mpaInput.epsilon, mpaOutput.beta);
-        mpaOutput.delta = geocentric_declination(mpaOutput.beta, mpaInput.epsilon, mpaOutput.lamda);
+        mpaResponse.alpha = geocentric_right_ascension(mpaResponse.lamda, mpaRequest.epsilon, mpaResponse.beta);
+        mpaResponse.delta = geocentric_declination(mpaResponse.beta, mpaRequest.epsilon, mpaResponse.lamda);
 
-        mpaOutput.h = observer_hour_angle(mpaInput.nu, mpaInput.longitude, mpaOutput.alpha);
+        mpaResponse.h = observer_hour_angle(mpaRequest.nu, mpaRequest.longitude, mpaResponse.alpha);
 
         const deltaAlphaAndDeltaPrime = right_ascension_parallax_and_topocentric_dec(
-            mpaInput.latitude,
-            mpaInput.elevation,
-            mpaOutput.pi,
-            mpaOutput.h,
-            mpaOutput.delta
+            mpaRequest.latitude,
+            mpaRequest.elevation,
+            mpaResponse.pi,
+            mpaResponse.h,
+            mpaResponse.delta
         );
-        mpaOutput.del_alpha = deltaAlphaAndDeltaPrime.delta_alpha;
-        mpaOutput.delta_prime = deltaAlphaAndDeltaPrime.delta_prime;
+        mpaResponse.del_alpha = deltaAlphaAndDeltaPrime.delta_alpha;
+        mpaResponse.delta_prime = deltaAlphaAndDeltaPrime.delta_prime;
 
-        mpaOutput.alpha_prime = topocentric_right_ascension(mpaOutput.alpha, mpaOutput.del_alpha);
-        mpaOutput.h_prime = topocentric_local_hour_angle(mpaOutput.h, mpaOutput.del_alpha);
+        mpaResponse.alpha_prime = topocentric_right_ascension(mpaResponse.alpha, mpaResponse.del_alpha);
+        mpaResponse.h_prime = topocentric_local_hour_angle(mpaResponse.h, mpaResponse.del_alpha);
 
-        mpaOutput.e0 = topocentric_elevation_angle(mpaInput.latitude, mpaOutput.delta_prime, mpaOutput.h_prime);
-        mpaOutput.del_e = atmospheric_refraction_correction(
-            mpaInput.pressure,
-            mpaInput.temperature,
-            mpaInput.atmos_refract,
-            mpaOutput.e0
+        mpaResponse.e0 = topocentric_elevation_angle(mpaRequest.latitude, mpaResponse.delta_prime, mpaResponse.h_prime);
+        mpaResponse.del_e = atmospheric_refraction_correction(
+            mpaRequest.pressure,
+            mpaRequest.temperature,
+            mpaRequest.atmos_refract,
+            mpaResponse.e0
         );
-        mpaOutput.e = topocentric_elevation_angle_corrected(mpaOutput.e0, mpaOutput.del_e);
+        mpaResponse.e = topocentric_elevation_angle_corrected(mpaResponse.e0, mpaResponse.del_e);
 
-        mpaOutput.zenith = topocentric_zenith_angle(mpaOutput.e);
-        mpaOutput.azimuth_astro = topocentric_azimuth_angle_astro(
-            mpaOutput.h_prime,
-            mpaInput.latitude,
-            mpaOutput.delta_prime
+        mpaResponse.zenith = topocentric_zenith_angle(mpaResponse.e);
+        mpaResponse.azimuth_astro = topocentric_azimuth_angle_astro(
+            mpaResponse.h_prime,
+            mpaRequest.latitude,
+            mpaResponse.delta_prime
         );
-        mpaOutput.azimuth = topocentric_azimuth_angle(mpaOutput.azimuth_astro);
+        mpaResponse.azimuth = topocentric_azimuth_angle(mpaResponse.azimuth_astro);
+
+        return mpaResponse;
     }
 }
 
@@ -312,4 +316,4 @@ function apparent_moon_longitude(lamda_prime, del_psi) {
     return lamda_prime + del_psi;
 }
 
-export {MpaInput, MpaOutput};
+export {MpaRequest, MpaResponse};

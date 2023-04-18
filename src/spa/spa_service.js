@@ -28,7 +28,7 @@ import {
     topocentric_local_hour_angle,
     topocentric_right_ascension,
     topocentric_zenith_angle
-} from "../utils/utils.js";
+} from "../common/utils.js";
 
 //enumeration for function codes to select desired final outputs from SPA
 export const SPA_ZA = 0;     //calculate zenith and azimuth
@@ -442,126 +442,125 @@ export class SpaService {
      * Calculate all SPA parameters and put into structure
      * Note: All inputs values (listed in header file) must already be in structure
      *
-     * @param {SpaRequest} spaInput
-     * @param {SpaResponse} spaOutput
+     * @param {SpaRequest} spaRequest
+     * @return {SpaResponse}
      */
-    calculate(spaInput, spaOutput) {
-        const result = spaInput.validate();
-        if (result === 0) {
-            spaOutput.jd = julian_day(
-                spaInput.year,
-                spaInput.month,
-                spaInput.day,
-                spaInput.hour,
-                spaInput.minute,
-                spaInput.second,
-                spaInput.delta_ut1,
-                spaInput.timezone
+    calculate(spaRequest) {
+        spaRequest.assertValid();
+        const spaResponse = new SpaResponse();
+        spaResponse.jd = julian_day(
+            spaRequest.year,
+            spaRequest.month,
+            spaRequest.day,
+            spaRequest.hour,
+            spaRequest.minute,
+            spaRequest.second,
+            spaRequest.delta_ut1,
+            spaRequest.timezone
+        );
+
+        this.calculate_geocentric_sun_right_ascension_and_declination(spaRequest, spaResponse);
+
+        spaResponse.h = observer_hour_angle(spaResponse.nu, spaRequest.longitude, spaResponse.alpha);
+        spaResponse.xi = sun_equatorial_horizontal_parallax(spaResponse.r);
+
+        const deltaAlphaAndDeltaPrime = right_ascension_parallax_and_topocentric_dec(
+            spaRequest.latitude,
+            spaRequest.elevation,
+            spaResponse.xi,
+            spaResponse.h,
+            spaResponse.delta
+        );
+        spaResponse.del_alpha = deltaAlphaAndDeltaPrime.delta_alpha;
+        spaResponse.delta_prime = deltaAlphaAndDeltaPrime.delta_prime;
+
+        spaResponse.alpha_prime = topocentric_right_ascension(spaResponse.alpha, spaResponse.del_alpha);
+        spaResponse.h_prime = topocentric_local_hour_angle(spaResponse.h, spaResponse.del_alpha);
+
+        spaResponse.e0 = topocentric_elevation_angle(spaRequest.latitude, spaResponse.delta_prime, spaResponse.h_prime);
+        spaResponse.del_e = atmospheric_refraction_correction(
+            spaRequest.pressure,
+            spaRequest.temperature,
+            spaRequest.atmos_refract,
+            spaResponse.e0
+        );
+        spaResponse.e = topocentric_elevation_angle_corrected(spaResponse.e0, spaResponse.del_e);
+
+        spaResponse.zenith = topocentric_zenith_angle(spaResponse.e);
+        spaResponse.azimuth_astro = topocentric_azimuth_angle_astro(
+            spaResponse.h_prime,
+            spaRequest.latitude,
+            spaResponse.delta_prime
+        );
+        spaResponse.azimuth = topocentric_azimuth_angle(spaResponse.azimuth_astro);
+
+        if ((spaRequest.function === SPA_ZA_INC) || (spaRequest.function === SPA_ALL))
+            spaResponse.incidence = surface_incidence_angle(
+                spaResponse.zenith,
+                spaResponse.azimuth_astro,
+                spaRequest.azm_rotation,
+                spaRequest.slope
             );
 
-            this.calculate_geocentric_sun_right_ascension_and_declination(spaInput, spaOutput);
-
-            spaOutput.h = observer_hour_angle(spaOutput.nu, spaInput.longitude, spaOutput.alpha);
-            spaOutput.xi = sun_equatorial_horizontal_parallax(spaOutput.r);
-
-            const deltaAlphaAndDeltaPrime = right_ascension_parallax_and_topocentric_dec(
-                spaInput.latitude,
-                spaInput.elevation,
-                spaOutput.xi,
-                spaOutput.h,
-                spaOutput.delta
-            );
-            spaOutput.del_alpha = deltaAlphaAndDeltaPrime.delta_alpha;
-            spaOutput.delta_prime = deltaAlphaAndDeltaPrime.delta_prime;
-
-            spaOutput.alpha_prime = topocentric_right_ascension(spaOutput.alpha, spaOutput.del_alpha);
-            spaOutput.h_prime = topocentric_local_hour_angle(spaOutput.h, spaOutput.del_alpha);
-
-            spaOutput.e0 = topocentric_elevation_angle(spaInput.latitude, spaOutput.delta_prime, spaOutput.h_prime);
-            spaOutput.del_e = atmospheric_refraction_correction(
-                spaInput.pressure,
-                spaInput.temperature,
-                spaInput.atmos_refract,
-                spaOutput.e0
-            );
-            spaOutput.e = topocentric_elevation_angle_corrected(spaOutput.e0, spaOutput.del_e);
-
-            spaOutput.zenith = topocentric_zenith_angle(spaOutput.e);
-            spaOutput.azimuth_astro = topocentric_azimuth_angle_astro(
-                spaOutput.h_prime,
-                spaInput.latitude,
-                spaOutput.delta_prime
-            );
-            spaOutput.azimuth = topocentric_azimuth_angle(spaOutput.azimuth_astro);
-
-            if ((spaInput.function === SPA_ZA_INC) || (spaInput.function === SPA_ALL))
-                spaOutput.incidence = surface_incidence_angle(
-                    spaOutput.zenith,
-                    spaOutput.azimuth_astro,
-                    spaInput.azm_rotation,
-                    spaInput.slope
-                );
-
-            if ((spaInput.function === SPA_ZA_RTS) || (spaInput.function === SPA_ALL)) {
-                this.calculate_eot_and_sun_rise_transit_set(spaInput, spaOutput);
-            }
+        if ((spaRequest.function === SPA_ZA_RTS) || (spaRequest.function === SPA_ALL)) {
+            this.calculate_eot_and_sun_rise_transit_set(spaRequest, spaResponse);
         }
 
-        return result;
+        return spaResponse;
     }
 
     /**
      * Calculate required SPA parameters to get the right ascension (alpha) and declination (delta)
      * Note: JD must be already calculated and in structure
      *
-     * @param {SpaRequest} spaInput
-     * @param {SpaResponse} spaOutput
+     * @param {SpaRequest} spaRequest
+     * @param {SpaResponse} spaResponse
      */
-    calculate_geocentric_sun_right_ascension_and_declination(spaInput, spaOutput) {
+    calculate_geocentric_sun_right_ascension_and_declination(spaRequest, spaResponse) {
         let x = new Array(TERM_X_COUNT);
 
-        spaOutput.jc = julian_century(spaOutput.jd);
+        spaResponse.jc = julian_century(spaResponse.jd);
 
-        spaOutput.jde = julian_ephemeris_day(spaOutput.jd, spaInput.delta_t);
-        spaOutput.jce = julian_ephemeris_century(spaOutput.jde);
-        spaOutput.jme = julian_ephemeris_millennium(spaOutput.jce);
+        spaResponse.jde = julian_ephemeris_day(spaResponse.jd, spaRequest.delta_t);
+        spaResponse.jce = julian_ephemeris_century(spaResponse.jde);
+        spaResponse.jme = julian_ephemeris_millennium(spaResponse.jce);
 
-        spaOutput.l = earth_heliocentric_longitude(spaOutput.jme);
-        spaOutput.b = earth_heliocentric_latitude(spaOutput.jme);
-        spaOutput.r = earth_radius_vector(spaOutput.jme);
+        spaResponse.l = earth_heliocentric_longitude(spaResponse.jme);
+        spaResponse.b = earth_heliocentric_latitude(spaResponse.jme);
+        spaResponse.r = earth_radius_vector(spaResponse.jme);
 
-        spaOutput.theta = geocentric_longitude(spaOutput.l);
-        spaOutput.beta = geocentric_latitude(spaOutput.b);
+        spaResponse.theta = geocentric_longitude(spaResponse.l);
+        spaResponse.beta = geocentric_latitude(spaResponse.b);
 
-        x[TERM_X0] = spaOutput.x0 = mean_elongation_moon_sun(spaOutput.jce);
-        x[TERM_X1] = spaOutput.x1 = mean_anomaly_sun(spaOutput.jce);
-        x[TERM_X2] = spaOutput.x2 = mean_anomaly_moon(spaOutput.jce);
-        x[TERM_X3] = spaOutput.x3 = argument_latitude_moon(spaOutput.jce);
-        x[TERM_X4] = spaOutput.x4 = ascending_longitude_moon(spaOutput.jce);
+        x[TERM_X0] = spaResponse.x0 = mean_elongation_moon_sun(spaResponse.jce);
+        x[TERM_X1] = spaResponse.x1 = mean_anomaly_sun(spaResponse.jce);
+        x[TERM_X2] = spaResponse.x2 = mean_anomaly_moon(spaResponse.jce);
+        x[TERM_X3] = spaResponse.x3 = argument_latitude_moon(spaResponse.jce);
+        x[TERM_X4] = spaResponse.x4 = ascending_longitude_moon(spaResponse.jce);
 
-        const delPsiAndDelEpsilon = nutation_longitude_and_obliquity(spaOutput.jce, x);
-        spaOutput.del_psi = delPsiAndDelEpsilon.del_psi;
-        spaOutput.del_epsilon = delPsiAndDelEpsilon.del_epsilon;
+        const delPsiAndDelEpsilon = nutation_longitude_and_obliquity(spaResponse.jce, x);
+        spaResponse.del_psi = delPsiAndDelEpsilon.del_psi;
+        spaResponse.del_epsilon = delPsiAndDelEpsilon.del_epsilon;
 
-        spaOutput.epsilon0 = ecliptic_mean_obliquity(spaOutput.jme);
-        spaOutput.epsilon = ecliptic_true_obliquity(spaOutput.del_epsilon, spaOutput.epsilon0);
+        spaResponse.epsilon0 = ecliptic_mean_obliquity(spaResponse.jme);
+        spaResponse.epsilon = ecliptic_true_obliquity(spaResponse.del_epsilon, spaResponse.epsilon0);
 
-        spaOutput.del_tau = aberration_correction(spaOutput.r);
-        spaOutput.lamda = apparent_sun_longitude(spaOutput.theta, spaOutput.del_psi, spaOutput.del_tau);
-        spaOutput.nu0 = greenwich_mean_sidereal_time(spaOutput.jd, spaOutput.jc);
-        spaOutput.nu = greenwich_sidereal_time(spaOutput.nu0, spaOutput.del_psi, spaOutput.epsilon);
+        spaResponse.del_tau = aberration_correction(spaResponse.r);
+        spaResponse.lamda = apparent_sun_longitude(spaResponse.theta, spaResponse.del_psi, spaResponse.del_tau);
+        spaResponse.nu0 = greenwich_mean_sidereal_time(spaResponse.jd, spaResponse.jc);
+        spaResponse.nu = greenwich_sidereal_time(spaResponse.nu0, spaResponse.del_psi, spaResponse.epsilon);
 
-        spaOutput.alpha = geocentric_right_ascension(spaOutput.lamda, spaOutput.epsilon, spaOutput.beta);
-        spaOutput.delta = geocentric_declination(spaOutput.beta, spaOutput.epsilon, spaOutput.lamda);
+        spaResponse.alpha = geocentric_right_ascension(spaResponse.lamda, spaResponse.epsilon, spaResponse.beta);
+        spaResponse.delta = geocentric_declination(spaResponse.beta, spaResponse.epsilon, spaResponse.lamda);
     }
 
     /**
      * Calculate Equation of Time (EOT) and Sun Rise, Transit, & Set (RTS)
      *
-     * @param {SpaRequest} spaInput
-     * @param {SpaResponse} spaOutput
+     * @param {SpaRequest} spaRequest
+     * @param {SpaResponse} spaResponse
      */
-    calculate_eot_and_sun_rise_transit_set(spaInput, spaOutput) {
+    calculate_eot_and_sun_rise_transit_set(spaRequest, spaResponse) {
         let nu, m, h0, n;
         let alpha = {associative: new Array(JD_COUNT)};
         let delta = {associative: new Array(JD_COUNT)};
@@ -571,12 +570,12 @@ export class SpaService {
         let alpha_prime = {associative: new Array(SUN_COUNT)};
         let delta_prime = {associative: new Array(SUN_COUNT)};
         let h_prime = {associative: new Array(SUN_COUNT)};
-        const h0_prime = -1 * (SUN_RADIUS + spaInput.atmos_refract);
+        const h0_prime = -1 * (SUN_RADIUS + spaRequest.atmos_refract);
 
-        const sun_inp = Object.assign({}, spaInput);
-        const sun_rts = Object.assign({}, spaOutput);
-        m = sun_mean_longitude(spaOutput.jme);
-        spaOutput.eot = eot(m, spaOutput.alpha, spaOutput.del_psi, spaOutput.epsilon);
+        const sun_inp = Object.assign({}, spaRequest);
+        const sun_rts = Object.assign({}, spaResponse);
+        m = sun_mean_longitude(spaResponse.jme);
+        spaResponse.eot = eot(m, spaResponse.alpha, spaResponse.del_psi, spaResponse.epsilon);
 
         sun_inp.hour = sun_inp.minute = sun_inp.second = 0;
         sun_inp.delta_ut1 = sun_inp.timezone = 0.0;
@@ -603,33 +602,33 @@ export class SpaService {
             sun_rts.jd++;
         }
 
-        m_rts.associative[SUN_TRANSIT] = approx_sun_transit_time(alpha.associative[JD_ZERO], spaInput.longitude, nu);
-        h0 = sun_hour_angle_at_rise_set(spaInput.latitude, delta.associative[JD_ZERO], h0_prime);
+        m_rts.associative[SUN_TRANSIT] = approx_sun_transit_time(alpha.associative[JD_ZERO], spaRequest.longitude, nu);
+        h0 = sun_hour_angle_at_rise_set(spaRequest.latitude, delta.associative[JD_ZERO], h0_prime);
 
         if (h0 >= 0) {
             approx_sun_rise_and_set(m_rts, h0);
             for (let i = 0; i < SUN_COUNT; i++) {
                 nu_rts.associative[i] = nu + 360.985647 * m_rts.associative[i];
 
-                n = m_rts.associative[i] + spaInput.delta_t / 86400.0;
+                n = m_rts.associative[i] + spaRequest.delta_t / 86400.0;
                 alpha_prime.associative[i] = rts_alpha_delta_prime(alpha, n);
                 delta_prime.associative[i] = rts_alpha_delta_prime(delta, n);
 
                 h_prime.associative[i] = limit_degrees180pm(
-                    nu_rts.associative[i] + spaInput.longitude - alpha_prime.associative[i]
+                    nu_rts.associative[i] + spaRequest.longitude - alpha_prime.associative[i]
                 );
 
-                h_rts.associative[i] = rts_sun_altitude(spaInput.latitude, delta_prime.associative[i], h_prime.associative[i]);
+                h_rts.associative[i] = rts_sun_altitude(spaRequest.latitude, delta_prime.associative[i], h_prime.associative[i]);
             }
 
-            spaOutput.srha = h_prime.associative[SUN_RISE];
-            spaOutput.ssha = h_prime.associative[SUN_SET];
-            spaOutput.sta = h_rts.associative[SUN_TRANSIT];
-            spaOutput.suntransit = dayfrac_to_local_hr(m_rts.associative[SUN_TRANSIT] - h_prime.associative[SUN_TRANSIT] / 360.0, spaInput.timezone);
-            spaOutput.sunrise = dayfrac_to_local_hr(sun_rise_and_set(m_rts, h_rts, delta_prime, spaInput.latitude, h_prime, h0_prime, SUN_RISE), spaInput.timezone);
-            spaOutput.sunset = dayfrac_to_local_hr(sun_rise_and_set(m_rts, h_rts, delta_prime, spaInput.latitude, h_prime, h0_prime, SUN_SET), spaInput.timezone);
+            spaResponse.srha = h_prime.associative[SUN_RISE];
+            spaResponse.ssha = h_prime.associative[SUN_SET];
+            spaResponse.sta = h_rts.associative[SUN_TRANSIT];
+            spaResponse.suntransit = dayfrac_to_local_hr(m_rts.associative[SUN_TRANSIT] - h_prime.associative[SUN_TRANSIT] / 360.0, spaRequest.timezone);
+            spaResponse.sunrise = dayfrac_to_local_hr(sun_rise_and_set(m_rts, h_rts, delta_prime, spaRequest.latitude, h_prime, h0_prime, SUN_RISE), spaRequest.timezone);
+            spaResponse.sunset = dayfrac_to_local_hr(sun_rise_and_set(m_rts, h_rts, delta_prime, spaRequest.latitude, h_prime, h0_prime, SUN_SET), spaRequest.timezone);
         } else {
-            spaOutput.srha = spaOutput.ssha = spaOutput.sta = spaOutput.suntransit = spaOutput.sunrise = spaOutput.sunset = -99999;
+            spaResponse.srha = spaResponse.ssha = spaResponse.sta = spaResponse.suntransit = spaResponse.sunrise = spaResponse.sunset = -99999;
         }
     }
 }

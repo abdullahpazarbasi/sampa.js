@@ -1,12 +1,12 @@
-import {SpaService, SpaRequest, SpaResponse, SPA_ALL} from '../../src/spa/spa_service.js';
-import {convertFractionalHourToClockNotation} from "../../src/utils/utils.js";
+import {SpaService, SpaRequest, SPA_ALL} from '../../src/spa/spa_service.js';
+import {convertFractionalHourToClockNotation} from "../../src/common/utils.js";
 
 import {expect} from 'chai';
 
 describe('spa service', () => {
     it('should return valid output', () => {
         // given
-        const spaInput = new SpaRequest(
+        const spaRequest = new SpaRequest(
             2003,
             10,
             17,
@@ -26,30 +26,28 @@ describe('spa service', () => {
             0.5667,
             SPA_ALL
         );
-        const spaOutput = new SpaResponse();
         const s = new SpaService();
 
         // when
-        const r = s.calculate(spaInput, spaOutput);
+        const spaResponse = s.calculate(spaRequest);
 
         // then
-        expect(r).to.equal(0);
-        expect(spaOutput.jd).to.equal(2452930.312847222);
-        expect(spaOutput.l).to.equal(24.0182616916794); // deg.
-        expect(spaOutput.b).to.equal(-0.00010112192480034237); // deg.
-        expect(spaOutput.r).to.equal(0.9965422973539708); // AU
-        expect(spaOutput.h).to.equal(11.105902013913465); // deg.
-        expect(spaOutput.del_psi).to.equal(-0.003998404303332777); // deg.
-        expect(spaOutput.del_epsilon).to.equal(0.0016665681772496856); // deg.
-        expect(spaOutput.epsilon).to.equal(23.440464519617525); // deg.
-        expect(spaOutput.zenith).to.equal(50.11162202402972); // deg.
-        expect(spaOutput.azimuth).to.equal(194.34024051019165); // deg.
-        expect(spaOutput.incidence).to.equal(25.18700020035315); // deg.
-        expect(spaOutput.sunrise).to.equal(6.212066609284621);
-        const sunriseTime = convertFractionalHourToClockNotation(spaOutput.sunrise);
+        expect(spaResponse.jd).to.equal(2452930.312847222);
+        expect(spaResponse.l).to.equal(24.0182616916794); // deg.
+        expect(spaResponse.b).to.equal(-0.00010112192480034237); // deg.
+        expect(spaResponse.r).to.equal(0.9965422973539708); // AU
+        expect(spaResponse.h).to.equal(11.105902013913465); // deg.
+        expect(spaResponse.del_psi).to.equal(-0.003998404303332777); // deg.
+        expect(spaResponse.del_epsilon).to.equal(0.0016665681772496856); // deg.
+        expect(spaResponse.epsilon).to.equal(23.440464519617525); // deg.
+        expect(spaResponse.zenith).to.equal(50.11162202402972); // deg.
+        expect(spaResponse.azimuth).to.equal(194.34024051019165); // deg.
+        expect(spaResponse.incidence).to.equal(25.18700020035315); // deg.
+        expect(spaResponse.sunrise).to.equal(6.212066609284621);
+        const sunriseTime = convertFractionalHourToClockNotation(spaResponse.sunrise);
         expect(sunriseTime).to.equal('06:12:43');
-        expect(spaOutput.sunset).to.equal(17.338666514441748);
-        const sunsetTime = convertFractionalHourToClockNotation(spaOutput.sunset);
+        expect(spaResponse.sunset).to.equal(17.338666514441748);
+        const sunsetTime = convertFractionalHourToClockNotation(spaResponse.sunset);
         expect(sunsetTime).to.equal('17:20:19');
     });
 });

@@ -9,7 +9,7 @@
     <script>
         document.addEventListener("DOMContentLoaded", function (event) {
             // ...
-            const inp = new sampa.Request(
+            const rq = new sampa.Request(
                 2009,
                 7,
                 22,
@@ -34,9 +34,8 @@
                 0.85,
                 0.2
             );
-            const out = new sampa.Response();
-            const result = sampa.create().calculate(inp, out);
-            console.log(out);
+            const rs = sampa.create().calculate(rq);
+            console.log(rs);
             // ...
         });
     </script>

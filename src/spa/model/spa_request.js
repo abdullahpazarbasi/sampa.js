@@ -1,4 +1,5 @@
 import {SPA_ALL, SPA_ZA_INC} from "../spa_service.js";
+import {SampaError} from "../../common/sampa_error.js";
 
 export class SpaRequest {
     year; // 4-digit year, valid range: -2000 to 6000, error code: 1
@@ -78,31 +79,67 @@ export class SpaRequest {
         this.function = func;
     }
 
-    validate() {
-        if ((this.year < -2000) || (this.year > 6000)) return 1;
-        if ((this.month < 1) || (this.month > 12)) return 2;
-        if ((this.day < 1) || (this.day > 31)) return 3;
-        if ((this.hour < 0) || (this.hour > 24)) return 4;
-        if ((this.minute < 0) || (this.minute > 59)) return 5;
-        if ((this.second < 0) || (this.second >= 60)) return 6;
-        if ((this.hour === 24) && (this.minute > 0)) return 5;
-        if ((this.hour === 24) && (this.second > 0)) return 6;
-        if (Math.abs(this.delta_t) > 8000) return 7;
-        if (Math.abs(this.timezone) > 18) return 8;
-        if (Math.abs(this.longitude) > 180) return 9;
-        if (Math.abs(this.latitude) > 90) return 10;
-        if (this.elevation < -6500000) return 11;
-        if ((this.pressure < 0) || (this.pressure > 5000)) return 12;
-        if ((this.temperature <= -273) || (this.temperature > 6000)) return 13;
-
-        if ((this.function === SPA_ZA_INC) || (this.function === SPA_ALL)) {
-            if (Math.abs(this.slope) > 360) return 14;
-            if (Math.abs(this.azm_rotation) > 360) return 15;
+    assertValid() {
+        if ((this.year < -2000) || (this.year > 6000)) {
+            throw new SampaError(1, 'year must be an integer between -2000 and 6000');
+        }
+        if ((this.month < 1) || (this.month > 12)) {
+            throw new SampaError(2, 'month must be an integer between 1 and 12');
+        }
+        if ((this.day < 1) || (this.day > 31)) {
+            throw new SampaError(3, 'day must be an integer between 1 and 31');
+        }
+        if ((this.hour < 0) || (this.hour > 24)) {
+            throw new SampaError(4, 'hour must be an integer between 0 and 24');
+        }
+        if ((this.minute < 0) || (this.minute > 59)) {
+            throw new SampaError(5, 'minute must be an integer between 0 and 59');
+        }
+        if ((this.second < 0) || (this.second >= 60)) {
+            throw new SampaError(6, 'second must be a number between 0 and 59.999999999');
+        }
+        if ((this.hour === 24) && (this.minute > 0)) {
+            throw new SampaError(5, 'minute can not be greater than 0 while hour is 24');
+        }
+        if ((this.hour === 24) && (this.second > 0)) {
+            throw new SampaError(6, 'second can not be greater than 0 while hour is 24');
+        }
+        if (Math.abs(this.delta_t) > 8000) {
+            throw new SampaError(7, 'delta_t must be a number between -8000 and 8000');
+        }
+        if (Math.abs(this.timezone) > 18) {
+            throw new SampaError(8, 'timezone must be a number between -18 and 18');
+        }
+        if (Math.abs(this.longitude) > 180) {
+            throw new SampaError(9, 'longitude must be a number between -180 and 180');
+        }
+        if (Math.abs(this.latitude) > 90) {
+            throw new SampaError(10, 'latitude must be a number between -90 and 90');
+        }
+        if (this.elevation < -6500000) {
+            throw new SampaError(11, 'elevation can not be less than -6500000');
+        }
+        if ((this.pressure < 0) || (this.pressure > 5000)) {
+            throw new SampaError(12, 'pressure must be a number between 0 and 5000');
+        }
+        if ((this.temperature <= -273) || (this.temperature > 6000)) {
+            throw new SampaError(13, 'temperature must be a number between -272.999999999 and 6000');
         }
 
-        if (Math.abs(this.atmos_refract) > 5) return 16;
-        if ((this.delta_ut1 <= -1) || (this.delta_ut1 >= 1)) return 17;
+        if ((this.function === SPA_ZA_INC) || (this.function === SPA_ALL)) {
+            if (Math.abs(this.slope) > 360) {
+                throw new SampaError(14, 'slope must be a number between -360 and 360');
+            }
+            if (Math.abs(this.azm_rotation) > 360) {
+                throw new SampaError(15, 'azm_rotation must be a number between -360 and 360');
+            }
+        }
 
-        return 0;
+        if (Math.abs(this.atmos_refract) > 5) {
+            throw new SampaError(16, 'atmos_refract must be a number between -5 and 5');
+        }
+        if ((this.delta_ut1 <= -1) || (this.delta_ut1 >= 1)) {
+            throw new SampaError(17, 'delta_ut1 must be a number which is greater than -1 and less than 1');
+        }
     }
 }

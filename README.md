@@ -17,11 +17,10 @@ NREL 's Solar and Moon Position Algorithm (SAMPA) calculates the solar and lunar
 <script>
     document.addEventListener("DOMContentLoaded", function (event) {
         // ...
-        const inp = new sampa.Request(
-            // parameters
+        const rq = new sampa.Request(
+                // parameters
         );
-        const out = new sampa.Output();
-        const result = sampa.create().calculate(inp, out);
+        const rs = sampa.create().calculate(rq);
         // ...
     });
 </script>
@@ -40,8 +39,9 @@ Please visit https://midcdmz.nrel.gov/sampa for additional information.
 - Inter-module functions wrapped into services
 - Input / output structure discriminated
 - Input / output models decoupled respecting to services
-- Value precision differences
+- Value precision
 - Plain associative arrays wrapped into objects whose only property is `associative`
+- Error throwing and handling
 - Tester entrypoints converted to unit tests
 
 ## Testing
