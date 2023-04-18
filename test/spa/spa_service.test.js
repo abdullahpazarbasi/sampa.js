@@ -1,5 +1,5 @@
 import {SpaService, SpaRequest, SPA_ALL} from '../../src/spa/spa_service.js';
-import {convertFractionalHourToClockNotation} from "../../src/common/utils.js";
+import {convertFractionalHourToClockNotation} from "../../src/common/tools.js";
 
 import {expect} from 'chai';
 

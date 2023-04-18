@@ -6,9 +6,9 @@
     <script src="../dist/sampa.min.js"></script>
 </head>
 <body>
+    <pre id="console"></pre>
     <script>
         document.addEventListener("DOMContentLoaded", function (event) {
-            // ...
             const rq = new sampa.Request(
                 2009,
                 7,
@@ -17,15 +17,15 @@
                 33,
                 0,
                 0,
-                66.4,
-                0,
-                143.36167,
                 24.61167,
+                143.36167,
                 0,
                 1000,
                 11,
                 0,
                 0,
+                0,
+                66.4,
                 0.5667,
                 sampa.ALL,
                 0.3,
@@ -35,8 +35,22 @@
                 0.2
             );
             const rs = sampa.create().calculate(rq);
+            const elm = document.querySelector('#console');
+            elm.textContent = elm.textContent + "Julian day: \t\t\t\t\t\t\t\t\t" + rs.spaResponse.jd + "\n";
+            elm.textContent = elm.textContent + "topocentric zenith angle: \t\t\t\t\t\t\t" + rs.spaResponse.zenith + "°\n";
+            elm.textContent = elm.textContent + "topocentric azimuth angle (eastward from north): \t\t\t\t" + rs.spaResponse.azimuth + "°\n";
+            elm.textContent = elm.textContent + "percentage of area of sun's unshaded lune (SUL) during eclipse: \t\t" + rs.a_sul_pct + "%\n";
+            elm.textContent = elm.textContent + "radius of sun disk: \t\t\t\t\t\t\t\t" + rs.rs + "°\n";
+            elm.textContent = elm.textContent + "surface incidence angle: \t\t\t\t\t\t\t" + rs.spaResponse.incidence + "°\n";
+            elm.textContent = elm.textContent + "local sunrise time (fractional hour): \t\t\t\t\t\t" + rs.spaResponse.sunrise + "\n";
+            elm.textContent = elm.textContent + "local sunrise time: \t\t\t\t\t\t\t\t" + sampa.convertFractionalHourToClockNotation(rs.spaResponse.sunrise) + "\n";
+            elm.textContent = elm.textContent + "local sun transit time (fractional hour): \t\t\t\t\t" + rs.spaResponse.suntransit + "\n";
+            elm.textContent = elm.textContent + "local sun transit time: \t\t\t\t\t\t\t" + sampa.convertFractionalHourToClockNotation(rs.spaResponse.suntransit) + "\n";
+            elm.textContent = elm.textContent + "local sunset time (fractional hour): \t\t\t\t\t\t" + rs.spaResponse.sunset + "\n";
+            elm.textContent = elm.textContent + "local sunset time: \t\t\t\t\t\t\t\t" + sampa.convertFractionalHourToClockNotation(rs.spaResponse.sunset) + "\n";
+            elm.textContent = elm.textContent + "local observed, topocentric, angular distance between sun and moon centers: \t" + rs.ems + "°\n";
+            elm.textContent = elm.textContent + "radius of moon disk: \t\t\t\t\t\t\t\t" + rs.rm + "°\n";
             console.log(rs);
-            // ...
         });
     </script>
 </body>

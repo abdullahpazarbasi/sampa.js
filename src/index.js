@@ -5,5 +5,6 @@ import {
     SampaResponse as Response,
     createSampaService as create
 } from './sampa.js';
+import {convertFractionalHourToClockNotation} from './common/tools.js';
 
-export {NO_IRR, ALL, Request, Response, create};
+export {NO_IRR, ALL, Request, Response, create, convertFractionalHourToClockNotation};

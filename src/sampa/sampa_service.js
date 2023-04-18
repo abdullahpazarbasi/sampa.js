@@ -1,8 +1,8 @@
 import {SampaRequest} from "./model/sampa_request.js";
 import {SampaResponse} from "./model/sampa_response.js";
-import {SPA_ZA, SpaRequest, SpaResponse, SpaService} from "../spa/spa_service.js";
-import {MpaRequest, MpaResponse, MpaService} from "../mpa/mpa_service.js";
-import {BirdService, BirdRequest, BirdResponse} from "../bird/bird_service.js";
+import {SPA_ALL, SpaRequest, SpaService} from "../spa/spa_service.js";
+import {MpaRequest, MpaService} from "../mpa/mpa_service.js";
+import {BirdService, BirdRequest} from "../bird/bird_service.js";
 import {deg2rad, rad2deg} from "../common/utils.js";
 
 export const SAMPA_NO_IRR = 0;
@@ -46,7 +46,7 @@ export class SampaService {
             sampaRequest.slope,
             sampaRequest.azm_rotation,
             sampaRequest.atmos_refract,
-            SPA_ZA
+            SPA_ALL
         );
         const spaResponse = this.spaService.calculate(spaRequest);
         const sampaResponse = new SampaResponse();
