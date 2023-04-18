@@ -1,5 +1,5 @@
-import {SpaInput} from './model/spa_input.js';
-import {SpaOutput} from './model/spa_output.js';
+import {SpaRequest} from './model/spa_request.js';
+import {SpaResponse} from './model/spa_response.js';
 import {
     atmospheric_refraction_correction,
     dayfrac_to_local_hr,
@@ -442,8 +442,8 @@ export class SpaService {
      * Calculate all SPA parameters and put into structure
      * Note: All inputs values (listed in header file) must already be in structure
      *
-     * @param {SpaInput} spaInput
-     * @param {SpaOutput} spaOutput
+     * @param {SpaRequest} spaInput
+     * @param {SpaResponse} spaOutput
      */
     calculate(spaInput, spaOutput) {
         const result = spaInput.validate();
@@ -514,8 +514,8 @@ export class SpaService {
      * Calculate required SPA parameters to get the right ascension (alpha) and declination (delta)
      * Note: JD must be already calculated and in structure
      *
-     * @param {SpaInput} spaInput
-     * @param {SpaOutput} spaOutput
+     * @param {SpaRequest} spaInput
+     * @param {SpaResponse} spaOutput
      */
     calculate_geocentric_sun_right_ascension_and_declination(spaInput, spaOutput) {
         let x = new Array(TERM_X_COUNT);
@@ -558,8 +558,8 @@ export class SpaService {
     /**
      * Calculate Equation of Time (EOT) and Sun Rise, Transit, & Set (RTS)
      *
-     * @param {SpaInput} spaInput
-     * @param {SpaOutput} spaOutput
+     * @param {SpaRequest} spaInput
+     * @param {SpaResponse} spaOutput
      */
     calculate_eot_and_sun_rise_transit_set(spaInput, spaOutput) {
         let nu, m, h0, n;
@@ -856,4 +856,4 @@ function sun_rise_and_set(m_rts, h_rts, delta_prime, latitude, h_prime, h0_prime
     return m_rts.associative[sun] + (h_rts.associative[sun] - h0_prime) / (360.0 * Math.cos(deg2rad(delta_prime.associative[sun])) * Math.cos(deg2rad(latitude)) * Math.sin(deg2rad(h_prime.associative[sun])));
 }
 
-export {SpaInput, SpaOutput};
+export {SpaRequest, SpaResponse};

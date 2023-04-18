@@ -1,7 +1,9 @@
-import {BirdService, MpaService, SampaService, SpaService} from "./sampa/sampa_service.js";
+import {
+    SAMPA_NO_IRR as NO_IRR,
+    SAMPA_ALL as ALL,
+    SampaRequest as Request,
+    SampaResponse as Response,
+    createSampaService as create
+} from './sampa.js';
 
-const sampaJs = new SampaService(
-    new SpaService(),
-    new MpaService(),
-    new BirdService()
-);
+export {NO_IRR, ALL, Request, Response, create};

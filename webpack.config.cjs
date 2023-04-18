@@ -1,23 +1,27 @@
-const {resolve} = require("path");
+const path = require('path');
 
 module.exports = {
-    entry: "./src/index.js",
+    name: 'sampa',
+    mode: 'production',
+    entry: './src/index.js',
     output: {
-        path: resolve(__dirname, "dist"),
-        filename: "bundle.js",
+        path: path.resolve(__dirname, 'dist'),
+        filename: 'sampa.min.js',
+        library: 'sampa',
+        libraryTarget: 'umd2'
     },
     module: {
         rules: [
             {
                 test: /\.m?js$/,
-                exclude: /(node_modules|bower_components)/,
+                exclude: /node_modules/,
                 use: {
-                    loader: "babel-loader",
+                    loader: 'babel-loader',
                     options: {
-                        presets: ["@babel/preset-env"],
-                    },
-                },
-            },
-        ],
-    },
+                        presets: ['@babel/preset-env']
+                    }
+                }
+            }
+        ]
+    }
 };

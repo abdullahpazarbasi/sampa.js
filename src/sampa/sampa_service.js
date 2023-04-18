@@ -1,6 +1,6 @@
-import {SampaInput} from "./model/sampa_input.js";
-import {SampaOutput} from "./model/sampa_output.js";
-import {SPA_ZA, SpaInput, SpaOutput, SpaService} from "../spa/spa_service.js";
+import {SampaRequest} from "./model/sampa_request.js";
+import {SampaResponse} from "./model/sampa_response.js";
+import {SPA_ZA, SpaRequest, SpaResponse, SpaService} from "../spa/spa_service.js";
 import {MpaInput, MpaOutput, MpaService} from "../mpa/mpa_service.js";
 import {BirdService, BirdInput, BirdOutput} from "../bird/bird_service.js";
 import {deg2rad, rad2deg} from "../utils/utils.js";
@@ -24,11 +24,11 @@ export class SampaService {
      * Calculate all SAMPA parameters and put into structure
      * Note: All inputs values (listed in SPA header file) must already be in structure
      *
-     * @param {SampaInput} sampaInput
-     * @param {SampaOutput} sampaOutput
+     * @param {SampaRequest} sampaInput
+     * @param {SampaResponse} sampaOutput
      */
     calculate(sampaInput, sampaOutput) {
-        const spaInput = new SpaInput(
+        const spaInput = new SpaRequest(
             sampaInput.year,
             sampaInput.month,
             sampaInput.day,
@@ -48,10 +48,10 @@ export class SampaService {
             sampaInput.atmos_refract,
             SPA_ZA
         );
-        const spaOutput = new SpaOutput();
+        const spaOutput = new SpaResponse();
         const result = this.spaService.calculate(spaInput, spaOutput);
         if (result === 0) {
-            sampaOutput.spaOutput = spaOutput;
+            sampaOutput.spaResponse = spaOutput;
             const mpaInput = new MpaInput(
                 sampaInput.longitude,
                 sampaInput.latitude,
@@ -66,7 +66,7 @@ export class SampaService {
             );
             const mpaOutput = new MpaOutput();
             this.mpaService.calculate(mpaInput, mpaOutput);
-            sampaOutput.mpaOutput = mpaOutput;
+            sampaOutput.mpaResponse = mpaOutput;
 
             sampaOutput.ems = angular_distance_sun_moon(
                 spaOutput.zenith,
@@ -92,13 +92,13 @@ export class SampaService {
     /**
      * Estimate solar irradiances using the SERI/NREL's Bird Clear Sky Model
      *
-     * @param {SampaInput} sampaInput
-     * @param {SampaOutput} sampaOutput
+     * @param {SampaRequest} sampaInput
+     * @param {SampaResponse} sampaOutput
      */
     estimate_irr(sampaInput, sampaOutput) {
         const birdInput = new BirdInput(
-            sampaOutput.spaOutput.zenith,
-            sampaOutput.spaOutput.r,
+            sampaOutput.spaResponse.zenith,
+            sampaOutput.spaResponse.r,
             sampaInput.pressure,
             sampaInput.bird_ozone,
             sampaInput.bird_pwv,
@@ -111,6 +111,7 @@ export class SampaService {
 
         this.birdService.calculate(birdInput, birdOutput);
 
+        sampaOutput.birdResponse = birdOutput;
         sampaOutput.dni = birdOutput.direct_normal;
         sampaOutput.dni_sul = birdOutput.direct_normal_mod;
         sampaOutput.ghi = birdOutput.global_horiz;
@@ -161,4 +162,4 @@ function sul_area(ems, rs, rm) {
     return {a_sul: a_sul, a_sul_pct: a_sul_pct};
 }
 
-export {SampaInput, SampaOutput, SpaService, MpaService, BirdService};
+export {SampaRequest, SampaResponse, SpaService, MpaService, BirdService};

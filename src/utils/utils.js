@@ -70,7 +70,7 @@ export function integer(value) {
 
 export function limit_degrees(degrees) {
     let limited = degrees / 360.0;
-    limited = 360.0 * (limited - Math.floor(limited));
+    limited = 360.0 * (limited - integer(limited));
     if (limited < 0) {
         limited += 360.0;
     }
@@ -80,7 +80,7 @@ export function limit_degrees(degrees) {
 
 export function limit_degrees180pm(degrees) {
     let limited = degrees / 360.0;
-    limited = 360.0 * (limited - Math.floor(limited));
+    limited = 360.0 * (limited - integer(limited));
     if (limited < -180.0) {
         limited += 360.0;
     } else if (limited > 180.0) {
@@ -92,7 +92,7 @@ export function limit_degrees180pm(degrees) {
 
 export function limit_degrees180(degrees) {
     let limited = degrees / 180.0;
-    limited = 180.0 * (limited - Math.floor(limited));
+    limited = 180.0 * (limited - integer(limited));
     if (limited < 0) {
         limited += 180.0;
     }
@@ -116,7 +116,7 @@ export function dayfrac_to_local_hr(dayfrac, timezone) {
 }
 
 export function limit_zero2one(value) {
-    let limited = value - Math.floor(value);
+    let limited = value - integer(value);
     if (limited < 0) {
         limited += 1.0;
     }

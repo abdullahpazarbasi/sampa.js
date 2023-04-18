@@ -6,7 +6,30 @@ NREL 's Solar and Moon Position Algorithm (SAMPA) calculates the solar and lunar
 
 ## Usage
 
-...
+```html
+<html lang="en">
+<head>
+    <title>Test</title>
+    <script src="https://cdn.jsdelivr.net/gh/abdullahpazarbasi/sampa.js@1.0.0/dist/sampa.min.js"></script>
+</head>
+
+<body>
+<script>
+    document.addEventListener("DOMContentLoaded", function (event) {
+        // ...
+        const inp = new sampa.Request(
+            // parameters
+        );
+        const out = new sampa.Output();
+        const result = sampa.create().calculate(inp, out);
+        // ...
+    });
+</script>
+</body>
+</html>
+```
+
+> Please, see [examples](/examples).
 
 ## Origin
 

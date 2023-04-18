@@ -1,4 +1,4 @@
-export class SampaInput {
+export class SampaRequest {
     year;
     month;
     day;
@@ -16,12 +16,12 @@ export class SampaInput {
     slope;
     azm_rotation;
     atmos_refract;
-    function;
-    bird_ozone;
-    bird_pwv;
-    bird_aod;
-    bird_ba;
-    bird_albedo;
+    function; // Switch to choose functions for desired output (from enumeration)
+    bird_ozone; //total column ozone thickness [cm] -- range from 0.05 - 0.4
+    bird_pwv; //total column water vapor [cm] -- range from 0.01 - 6.5
+    bird_aod; //broadband aerosol optical depth -- range from 0.02 - 0.5
+    bird_ba; //forward scattering factor -- 0.85 recommended for rural aerosols
+    bird_albedo; //ground reflectance -- earth typical is 0.2, snow 0.9, vegitation 0.25
 
     constructor(
         year,
@@ -65,11 +65,11 @@ export class SampaInput {
         this.slope = slope;
         this.azm_rotation = azm_rotation;
         this.atmos_refract = atmos_refract;
-        this.function = func; // Switch to choose functions for desired output (from enumeration)
-        this.bird_ozone = bird_ozone; //total column ozone thickness [cm] -- range from 0.05 - 0.4
-        this.bird_pwv = bird_pwv; //total column water vapor [cm] -- range from 0.01 - 6.5
-        this.bird_aod = bird_aod; //broadband aerosol optical depth -- range from 0.02 - 0.5
-        this.bird_ba = bird_ba; //forward scattering factor -- 0.85 recommended for rural aerosols
-        this.bird_albedo = bird_albedo; //ground reflectance -- earth typical is 0.2, snow 0.9, vegitation 0.25
+        this.function = func;
+        this.bird_ozone = bird_ozone;
+        this.bird_pwv = bird_pwv;
+        this.bird_aod = bird_aod;
+        this.bird_ba = bird_ba;
+        this.bird_albedo = bird_albedo;
     }
 }
