@@ -1,8 +1,7 @@
 {
   "name": "sampa",
   "type": "module",
-  "version": "1.0.0",
-  "description": "",
+  "description": "Sun and Moon Position Algorithm",
   "author": "Abdullah Pazarbasi",
   "license": "MIT",
   "devDependencies": {

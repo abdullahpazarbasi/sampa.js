@@ -17,6 +17,8 @@
                 33,
                 0,
                 0,
+                0,
+                66.4,
                 24.61167,
                 143.36167,
                 0,
@@ -24,8 +26,6 @@
                 11,
                 0,
                 0,
-                0,
-                66.4,
                 0.5667,
                 sampa.ALL,
                 0.3,
@@ -37,19 +37,30 @@
             const rs = sampa.create().calculate(rq);
             const elm = document.querySelector('#console');
             elm.textContent = elm.textContent + "Julian day: \t\t\t\t\t\t\t\t\t" + rs.spaResponse.jd + "\n";
-            elm.textContent = elm.textContent + "topocentric zenith angle: \t\t\t\t\t\t\t" + rs.spaResponse.zenith + "°\n";
-            elm.textContent = elm.textContent + "topocentric azimuth angle (eastward from north): \t\t\t\t" + rs.spaResponse.azimuth + "°\n";
+            elm.textContent = elm.textContent + "sun's topocentric declination: \t\t\t\t\t\t\t" + rs.spaResponse.delta_prime + "°\n";
+            elm.textContent = elm.textContent + "sun's topocentric right ascension: \t\t\t\t\t\t" + rs.spaResponse.alpha_prime + "°\n";
+            elm.textContent = elm.textContent + "sun's topocentric local hour angle: \t\t\t\t\t\t" + rs.spaResponse.h_prime + "°\n";
+            elm.textContent = elm.textContent + "sun's topocentric elevation angle: \t\t\t\t\t\t" + rs.spaResponse.e + "°\n";
+            elm.textContent = elm.textContent + "sun's equation of time: \t\t\t\t\t\t\t" + rs.spaResponse.eot + " minute(s)\n";
+            elm.textContent = elm.textContent + "sun's topocentric zenith angle: \t\t\t\t\t\t" + rs.spaResponse.zenith + "°\n";
+            elm.textContent = elm.textContent + "sun's topocentric azimuth angle (eastward from north): \t\t\t\t" + rs.spaResponse.azimuth + "°\n";
             elm.textContent = elm.textContent + "percentage of area of sun's unshaded lune (SUL) during eclipse: \t\t" + rs.a_sul_pct + "%\n";
             elm.textContent = elm.textContent + "radius of sun disk: \t\t\t\t\t\t\t\t" + rs.rs + "°\n";
-            elm.textContent = elm.textContent + "surface incidence angle: \t\t\t\t\t\t\t" + rs.spaResponse.incidence + "°\n";
+            elm.textContent = elm.textContent + "surface incidence angle for sun: \t\t\t\t\t\t" + rs.spaResponse.incidence + "°\n";
             elm.textContent = elm.textContent + "local sunrise time (fractional hour): \t\t\t\t\t\t" + rs.spaResponse.sunrise + "\n";
             elm.textContent = elm.textContent + "local sunrise time: \t\t\t\t\t\t\t\t" + sampa.convertFractionalHourToClockNotation(rs.spaResponse.sunrise) + "\n";
             elm.textContent = elm.textContent + "local sun transit time (fractional hour): \t\t\t\t\t" + rs.spaResponse.suntransit + "\n";
             elm.textContent = elm.textContent + "local sun transit time: \t\t\t\t\t\t\t" + sampa.convertFractionalHourToClockNotation(rs.spaResponse.suntransit) + "\n";
             elm.textContent = elm.textContent + "local sunset time (fractional hour): \t\t\t\t\t\t" + rs.spaResponse.sunset + "\n";
             elm.textContent = elm.textContent + "local sunset time: \t\t\t\t\t\t\t\t" + sampa.convertFractionalHourToClockNotation(rs.spaResponse.sunset) + "\n";
-            elm.textContent = elm.textContent + "local observed, topocentric, angular distance between sun and moon centers: \t" + rs.ems + "°\n";
+            elm.textContent = elm.textContent + "moon's topocentric declination: \t\t\t\t\t\t" + rs.mpaResponse.delta_prime + "°\n";
+            elm.textContent = elm.textContent + "moon's topocentric right ascension: \t\t\t\t\t\t" + rs.mpaResponse.alpha_prime + "°\n";
+            elm.textContent = elm.textContent + "moon's topocentric local hour angle: \t\t\t\t\t\t" + rs.mpaResponse.h_prime + "°\n";
+            elm.textContent = elm.textContent + "moon's topocentric elevation angle: \t\t\t\t\t\t" + rs.mpaResponse.e + "°\n";
+            elm.textContent = elm.textContent + "moon's topocentric zenith angle: \t\t\t\t\t\t" + rs.mpaResponse.zenith + "°\n";
+            elm.textContent = elm.textContent + "moon's topocentric azimuth angle (eastward from north): \t\t\t" + rs.mpaResponse.azimuth + "°\n";
             elm.textContent = elm.textContent + "radius of moon disk: \t\t\t\t\t\t\t\t" + rs.rm + "°\n";
+            elm.textContent = elm.textContent + "local observed, topocentric, angular distance between sun and moon centers: \t" + rs.ems + "°\n";
             console.log(rs);
         });
     </script>

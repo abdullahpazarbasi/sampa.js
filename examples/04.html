@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Test 02</title>
+    <title>Test 04</title>
     <script src="../dist/sampa.min.js"></script>
 </head>
 <body>
@@ -12,16 +12,16 @@
         const rq = new sampa.Request(
             2023, // gregorian year -- range from -2000 to 6000
             4, // gregorian month -- range from 1 to 12
-            19, // gregorian day -- range from 1 to 31
-            12, // observer local hours -- range from 0 to 24
-            38, // observer local minutes -- range from 0 to 59
-            0, // observer local seconds -- range from 0 to <60
+            20, // gregorian day -- range from 1 to 31
+            7, // observer local hours -- range from 0 to 24
+            12, // observer local minutes -- range from 0 to 59
+            1, // observer local seconds -- range from 0 to <60
             3, // observer timezone -- range from -18 to 18
             0, // ΔUT1 = Universal Time (UT) - Coordinated Universal Time (UTC) [seconds] -- range from >-1 to <1
             66.4, // ΔT = Terrestrial Time (TT) - Universal Time (UT) where ΔT = 32.184 + (TAI-UTC) - DUT1 [seconds] -- range from -8000 to 8000
-            40.5109637, // observer latitude -- range from -90 to 90
-            28.8378763, // observer longitude -- range from -180 to 180
-            12, // observer elevation [meters] -- minimum -6500000
+            -10.1749484, // observer latitude -- range from -90 to 90
+            123.5735185, // observer longitude -- range from -180 to 180
+            0, // observer elevation [meters] -- minimum -6500000
             1000, // annual average local pressure [millibars] -- range from 0 to 5000
             16, // annual average local temperature [degrees Celsius] -- range from >-273 to 6000
             0, // surface slope (measured from the horizontal plane) [degrees] -- range from -360 to 360
